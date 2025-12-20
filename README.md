@@ -31,7 +31,7 @@ Lưu ý: Trong quá trình cài đặt, nhớ check vào "Add Python to PATH"
 
 ```bash
 # Clone hoặc download mã nguồn về máy
-cd e:\L1_Loki\Code\Translator
+git clone https://github.com/L1-Loki/PDF_Translator.git
 ```
 
 ### Bước 3: Cài đặt thư viện
