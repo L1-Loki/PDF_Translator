@@ -16,10 +16,10 @@ echo.
 
 python -m PyInstaller --noconfirm --onefile --windowed ^
     --name "PDF_Translator" ^
-    --icon="Image\Loki.ico" ^
+    --icon="assets\Loki.ico" ^
     --add-data "translator.py;." ^
     --add-data "pdf_handler.py;." ^
-    --add-data "Image\Loki.png;Image" ^
+    --add-data "assets\Loki.png;assets" ^
     --hidden-import "deep_translator" ^
     --hidden-import "fitz" ^
     --hidden-import "PIL" ^
