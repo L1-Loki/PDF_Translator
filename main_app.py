@@ -23,6 +23,7 @@ except ImportError:
 
 from translator import TextTranslator
 from pdf_handler import PDFHandler
+from ui.split_tab import SplitPDFTab
 
 
 class PDFTranslatorApp:
@@ -64,7 +65,7 @@ class PDFTranslatorApp:
     def setup_icon(self):
         """Load icon cho ứng dụng từ file Loki.png"""
         try:
-            icon_path = os.path.join(os.path.dirname(__file__), 'Image', 'Loki.png')
+            icon_path = os.path.join(os.path.dirname(__file__), 'assets', 'Loki.png')
             if os.path.exists(icon_path):
                 # Load icon và set cho window
                 icon_image = tk.PhotoImage(file=icon_path)
@@ -86,53 +87,78 @@ class PDFTranslatorApp:
         # Cấu hình grid
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
-        main_frame.columnconfigure(1, weight=1)
         
-        # Tiêu đề
+        # Tiêu đề chính
         title_label = ttk.Label(
             main_frame, 
-            text="DỊCH PDF ENGLISH - VIETNAMESE",
+            text="PDF TRANSLATOR & SPLITTER",
             font=('Arial', 16, 'bold')
         )
-        title_label.grid(row=0, column=0, columnspan=3, pady=10)
+        title_label.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=10)
+        
+        # Tạo Notebook (tabs)
+        self.notebook = ttk.Notebook(main_frame)
+        self.notebook.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
+        
+        main_frame.rowconfigure(1, weight=1)
+        main_frame.columnconfigure(0, weight=1)
+        
+        # Tab 1: Dịch PDF
+        self.translate_tab = ttk.Frame(self.notebook, padding="10")
+        self.notebook.add(self.translate_tab, text="📝 Dịch PDF")
+        
+        # Tab 2: Tách PDF - dùng module riêng
+        self.split_tab_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.split_tab_frame, text="✂️ Tách PDF")
+        
+        # Tạo nội dung cho từng tab
+        self.create_translate_tab()
+        
+        # Tạo tab tách PDF từ module riêng
+        self.split_tab_ui = SplitPDFTab(self.split_tab_frame, log_callback=self.log)
+    
+    def create_translate_tab(self):
+        """Tạo tab Dịch PDF"""
+        tab = self.translate_tab
+        tab.columnconfigure(1, weight=1)
         
         # Chọn file PDF đầu vào
-        ttk.Label(main_frame, text="File PDF gốc:").grid(
-            row=1, column=0, sticky=tk.W, pady=5
+        ttk.Label(tab, text="File PDF gốc:").grid(
+            row=0, column=0, sticky=tk.W, pady=5
         )
         self.input_path_var = tk.StringVar()
         ttk.Entry(
-            main_frame, 
+            tab, 
             textvariable=self.input_path_var,
+            state='readonly',
+            width=50
+        ).grid(row=0, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
+        ttk.Button(
+            tab,
+            text="Chọn File",
+            command=self.select_input_file
+        ).grid(row=0, column=2, pady=5)
+        
+        # Chọn file PDF đầu ra
+        ttk.Label(tab, text="Lưu kết quả:").grid(
+            row=1, column=0, sticky=tk.W, pady=5
+        )
+        self.output_path_var = tk.StringVar()
+        ttk.Entry(
+            tab,
+            textvariable=self.output_path_var,
             state='readonly',
             width=50
         ).grid(row=1, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
         ttk.Button(
-            main_frame,
-            text="Chọn File",
-            command=self.select_input_file
-        ).grid(row=1, column=2, pady=5)
-        
-        # Chọn file PDF đầu ra
-        ttk.Label(main_frame, text="Lưu kết quả:").grid(
-            row=2, column=0, sticky=tk.W, pady=5
-        )
-        self.output_path_var = tk.StringVar()
-        ttk.Entry(
-            main_frame,
-            textvariable=self.output_path_var,
-            state='readonly',
-            width=50
-        ).grid(row=2, column=1, sticky=(tk.W, tk.E), pady=5, padx=5)
-        ttk.Button(
-            main_frame,
+            tab,
             text="Chọn Vị Trí",
             command=self.select_output_file
-        ).grid(row=2, column=2, pady=5)
+        ).grid(row=1, column=2, pady=5)
         
         # Frame thông tin
-        info_frame = ttk.LabelFrame(main_frame, text="Thông tin PDF", padding="10")
-        info_frame.grid(row=3, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
+        info_frame = ttk.LabelFrame(tab, text="Thông tin PDF", padding="10")
+        info_frame.grid(row=2, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
         info_frame.columnconfigure(1, weight=1)
         
         ttk.Label(info_frame, text="Số trang:").grid(row=0, column=0, sticky=tk.W)
@@ -149,36 +175,36 @@ class PDFTranslatorApp:
         
         # Nút bắt đầu dịch
         self.translate_button = ttk.Button(
-            main_frame,
+            tab,
             text="BẮT ĐẦU DỊCH",
             command=self.start_translation,
             style='Accent.TButton'
         )
-        self.translate_button.grid(row=4, column=0, columnspan=3, pady=20)
+        self.translate_button.grid(row=3, column=0, columnspan=3, pady=20)
         
         # Progress bar
         self.progress_var = tk.DoubleVar()
         self.progress_bar = ttk.Progressbar(
-            main_frame,
+            tab,
             variable=self.progress_var,
             maximum=100,
             mode='determinate',
             length=600
         )
-        self.progress_bar.grid(row=5, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
+        self.progress_bar.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
         
         # Status label
         self.status_var = tk.StringVar(value="Sẵn sàng")
         self.status_label = ttk.Label(
-            main_frame,
+            tab,
             textvariable=self.status_var,
             font=('Arial', 10)
         )
-        self.status_label.grid(row=6, column=0, columnspan=3, pady=5)
+        self.status_label.grid(row=5, column=0, columnspan=3, pady=5)
         
         # Log text area
-        log_frame = ttk.LabelFrame(main_frame, text="Log", padding="5")
-        log_frame.grid(row=7, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
+        log_frame = ttk.LabelFrame(tab, text="Log", padding="5")
+        log_frame.grid(row=6, column=0, columnspan=3, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
         log_frame.columnconfigure(0, weight=1)
         log_frame.rowconfigure(0, weight=1)
         
@@ -190,7 +216,7 @@ class PDFTranslatorApp:
         self.log_text.config(yscrollcommand=scrollbar.set)
         
         # Cấu hình grid weights
-        main_frame.rowconfigure(7, weight=1)
+        tab.rowconfigure(6, weight=1)
     
     def select_input_file(self):
         """Chọn file PDF đầu vào"""
@@ -480,7 +506,7 @@ class PDFTranslatorApp:
         """Tạo icon cho system tray từ Loki.png"""
         try:
             # Thử load icon Loki
-            icon_path = os.path.join(os.path.dirname(__file__), 'Image', 'Loki.png')
+            icon_path = os.path.join(os.path.dirname(__file__), 'assets', 'Loki.png')
             if os.path.exists(icon_path):
                 image = Image.open(icon_path)
                 # Resize về 64x64 cho tray icon

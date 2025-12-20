@@ -364,3 +364,57 @@ class PDFHandler:
             return info
         except Exception as e:
             return {"error": str(e)}
+    
+    def split_pdf(self, input_path: str, output_path: str, 
+                  from_page: int, to_page: int,
+                  progress_callback: Optional[callable] = None):
+        """
+        Tách PDF từ trang from_page đến to_page
+        
+        Args:
+            input_path: Đường dẫn file PDF gốc
+            output_path: Đường dẫn file PDF đầu ra
+            from_page: Trang bắt đầu (bắt đầu từ 1)
+            to_page: Trang kết thúc (bao gồm)
+            progress_callback: Callback để cập nhật tiến trình
+        """
+        try:
+            doc = fitz.open(input_path)
+            total_pages = len(doc)
+            
+            # Validate
+            if from_page < 1 or from_page > total_pages:
+                raise ValueError(f"Trang bắt đầu phải từ 1 đến {total_pages}")
+            
+            if to_page < from_page or to_page > total_pages:
+                raise ValueError(f"Trang kết thúc phải từ {from_page} đến {total_pages}")
+            
+            # Tạo PDF mới
+            output_doc = fitz.open()
+            
+            # Copy các trang từ from_page đến to_page
+            # Chú ý: PyMuPDF index từ 0, nhưng user nhập từ 1
+            for page_idx in range(from_page - 1, to_page):
+                output_doc.insert_pdf(
+                    doc,
+                    from_page=page_idx,
+                    to_page=page_idx,
+                    start_at=-1
+                )
+                
+                if progress_callback:
+                    current = page_idx - from_page + 2
+                    total = to_page - from_page + 1
+                    progress_callback(current, total, "Đang tách")
+            
+            # Lưu file
+            output_doc.save(output_path, garbage=4, deflate=True)
+            output_doc.close()
+            doc.close()
+            
+            print(f"✓ Đã tách PDF: {output_path}")
+            
+        except Exception as e:
+            print(f"Lỗi khi tách PDF: {e}")
+            raise
+
